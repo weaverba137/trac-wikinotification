@@ -12,12 +12,12 @@
 #
 # Please view LICENSE for additional licensing information.
 # =============================================================================
-
+from importlib.resources import files
 from trac.core import *
 from trac.web.chrome import ITemplateProvider
 from trac.admin import IAdminPanelProvider
 from trac.config import Option
-from trac.util.html import Markup, tag
+# from trac.util.html import Markup, tag
 
 
 class WikiNotificationAdminPanel(Component):
@@ -51,8 +51,9 @@ class WikiNotificationAdminPanel(Component):
         """Return the absolute path of the directory containing the provided
         Genshi templates.
         """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        # from pkg_resources import resource_filename
+        # return [resource_filename(__name__, 'templates')]
+        return [str(files('WikiNotification').pathjoin('templates'))]
 
     # Internal methods
 

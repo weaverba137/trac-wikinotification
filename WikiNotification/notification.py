@@ -13,17 +13,17 @@
 # Please view LICENSE for additional licensing information.
 # =============================================================================
 
-import re
+# import re
 
 from trac import __version__
 from trac.core import *
 from trac.util.text import CRLF
-from trac.util.html import tag, tag_, to_fragment
+from trac.util.html import tag, to_fragment
 from trac.wiki.model import WikiPage
 from trac.versioncontrol.diff import unified_diff
 from trac.notification import Notify, NotifyEmail, NotificationSystem
 from trac.config import Option, BoolOption, ListOption, IntOption
-from trac.util.translation import _, deactivate, reactivate
+from trac.util.translation import _, tag_, deactivate, reactivate
 from trac.resource import Resource
 from trac.perm import PermissionSystem
 
