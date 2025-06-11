@@ -17,7 +17,7 @@ import inspect
 from trac.core import *
 from trac.wiki.api import IWikiChangeListener
 
-from WikiNotification.notification import WikiNotifyEmail
+from .notification import WikiNotifyEmail
 
 
 class WikiNotificationChangeListener(Component):

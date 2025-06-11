@@ -21,7 +21,8 @@ from trac.web.api import ITemplateStreamFilter
 from trac.config import Option
 from trac.util.html import tag
 
-from pkg_resources import resource_filename
+# from pkg_resources import resource_filename
+from importlib.resources import files
 from genshi.filters.transform import Transformer
 
 
@@ -37,7 +38,8 @@ class WikiNotificationWebModule(Component):
         return []
 
     def get_templates_dirs(self):
-        resource_dir = resource_filename(__name__, 'templates')
+        # resource_dir = resource_filename(__name__, 'templates')
+        resource_dir = str(files('WikiNotification').joinpath('templates'))
         return [resource_dir]
 
     # INavigationContributor methods

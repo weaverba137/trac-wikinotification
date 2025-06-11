@@ -18,6 +18,7 @@ import re
 from trac import __version__
 from trac.core import *
 from trac.util.text import CRLF
+from trac.util.html import tag, tag_, to_fragment
 from trac.wiki.model import WikiPage
 from trac.versioncontrol.diff import unified_diff
 from trac.notification import Notify, NotifyEmail, NotificationSystem
@@ -198,12 +199,12 @@ class WikiNotifyEmail(NotifyEmail):
         return (tos, [])
 
     def send(self, torcpts, ccrcpts, mime_headers={}):
-        from email.MIMEText import MIMEText
-        from email.Utils import formatdate
+        from email.mime.text import MIMEText
+        from email.utils import formatdate
 
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
         if attach_diff:
-            from email.MIMEMultipart import MIMEMultipart
+            from email.mime.multipart import MIMEMultipart
             self.data["wikidiff"] = None
 
         charset = str(self._charset)
@@ -310,7 +311,7 @@ class WikiNotifyEmail(NotifyEmail):
         try:
             NotificationSystem(self.env).send_email(
                 self.from_email, recipients, msg.as_string())
-        except Exception, err:
+        except Exception as err:
             self.env.log.debug('Notification could not be sent: %r', err)
 
     def format_subject(self, action):
