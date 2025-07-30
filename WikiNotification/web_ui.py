@@ -15,31 +15,30 @@
 
 import re
 from trac.core import *
-from trac.web.chrome import INavigationContributor, ITemplateProvider
-from trac.web import HTTPNotFound, IRequestHandler
-from trac.web.api import ITemplateStreamFilter
+from trac.web.chrome import INavigationContributor, ITemplateProvider, add_script, add_script_data
+from trac.web import IRequestHandler
+from trac.web.api import IRequestFilter
 from trac.config import Option
 from trac.util.html import tag
 
-# from pkg_resources import resource_filename
-from importlib.resources import files
-from genshi.filters.transform import Transformer
+from pkg_resources import resource_filename
+# from importlib.resources import files
 
 
 class WikiNotificationWebModule(Component):
 
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
-               ITemplateStreamFilter)
+               IRequestFilter)
 
     redirect_time = Option('wiki-notification', 'redirect_time', default=5)
 
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
-        return []
+        yield 'wiki_notification', resource_filename(__name__, 'htdocs')
 
     def get_templates_dirs(self):
-        # resource_dir = resource_filename(__name__, 'templates')
-        resource_dir = str(files('WikiNotification').joinpath('templates'))
+        resource_dir = resource_filename(__name__, 'templates')
+        # resource_dir = str(files('WikiNotification').joinpath('templates'))
         return [resource_dir]
 
     # INavigationContributor methods
@@ -54,26 +53,20 @@ class WikiNotificationWebModule(Component):
                             title="Wiki Pages Change Notifications",
                             href=req.href.notification()))
 
-    # ITemplateStreamFilter method
-    def filter_stream(self, req, method, filename, stream, data):
-        #self.log.debug('ITemplateStreamFilter method')
-        if filename != 'wiki_view.html':
-            #self.log.debug('filter stream not matching "wiki_view.html"')
-            return stream
-        if not self.config.getbool('notification', 'smtp_enabled', False):
-            return stream
-        page = page = req.path_info[6:] or 'WikiStart'
-        watched = self._get_watched_pages(req)
-        if page in watched:
-            link = tag.a('Un-Watch Page', title='Un-Watch Page',
-                         href=req.href.notification(page))
-        else:
-            link = tag.a('Watch Page', title='Watch Page',
-                         href=req.href.notification(page))
-        #self.log.debug('Transforming output...')
-        return stream | Transformer(
-            '//div[@id="ctxtnav"]/ul/li[@class="last"]'
-        ).attr('class', None).after(tag.li(link, class_="last"))
+    # IRequestFilter method
+    def post_process_request(self, req, template, data, content_type):
+        if template == 'wiki_view.html' and self.config.getbool('notification', 'smtp_enabled', False):
+            self.log.debug("Adding (un)watch links.")
+            page = req.path_info[6:] or 'WikiStart'
+            watched = self._get_watched_pages(req)
+            wiki_notification_data = {'href': req.href.notification(page)}
+            if page in watched:
+                wiki_notification_data['title'] = 'Un-Watch Page'
+            else:
+                wiki_notification_data['title'] = 'Watch Page'
+            add_script(req, 'wiki_notification/wiki_notification.js')
+            add_script_data(req, wiki_notification=wiki_notification_data)
+        return template, data, content_type
 
     # IRequestHandler methods
     def match_request(self, req):

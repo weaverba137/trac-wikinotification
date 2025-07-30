@@ -150,3 +150,10 @@ break any of the logic in that template.
 
 .. _Easy Install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _Genshi Text Templates: http://genshi.edgewall.org/wiki/Documentation/0.4.x/text-templates.html
+
+Upgrade Notes
+-------------
+
+* Convert templates to Jinja2.
+* ``admin.py``, ``listener.py`` and ``web_ui.py`` probably do not need further changes, pending testing.
+* Possibly implement *some* of the upgrades as a test, *e.g.* only implement the admin panel.

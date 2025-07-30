@@ -15,5 +15,5 @@
 
 from . import admin
 from . import listener
-from . import notification
+# from . import notification
 from . import web_ui

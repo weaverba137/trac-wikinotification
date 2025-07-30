@@ -27,7 +27,7 @@ setup(
     platforms="OS Independent - Anywhere Python and Trac >=0.11 runs.",
     install_requires=['Trac'],
     packages=find_packages(),
-    package_data={'WikiNotification': ['templates/*.html', 'templates/*.txt']},
+    package_data={'WikiNotification': ['templates/*.html', 'templates/*.txt', 'htdocs/*.js']},
     entry_points={
         'trac.plugins': [
             'wikinotification = WikiNotification',
