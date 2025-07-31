@@ -1,126 +1,117 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:py="http://genshi.edgewall.org/"
-    xmlns:xi="http://www.w3.org/2001/XInclude">
-<xi:include href="admin.html" />
-<head>
-  <title>Wiki Notifications</title>
-</head>
-<body>
-  <h2>Wiki Notification Settings</h2>
-  <fieldset py:if="wnoptions.errors" style="border-color: red;">
-  <legend style="color: red;">Extra Configuration Warnings</legend>
-  <span py:for="key, val in wnoptions.errors.iteritems()">
-  <b>$key:</b> $val<br/>
-  </span>
-  <p class="help">
-    These are errors that need to be fixed so that the email notifications are
-    complete and correctly populated.
-  </p>
-  </fieldset>
-  <form class="mod" id="modwikinot" method="post">
-    <fieldset>
-    <legend>From Email Address</legend>
-    <label for="from_email">From Email Address:</label>
-      <input type="text" id="from_email" name="from_email"
-             value="${ wnoptions.from_email.value or
-                       wnoptions.from_email.default}"/>
-      <p class="help">$wnoptions.from_email.__doc__</p>
-    </fieldset>
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block admintitle
+            ${_('Wiki Notifications')} ${ super() }
+            # endblock admintitle
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+        # block adminpanel
+        <h2>Wiki Notification Settings</h2>
+        <form class="mod" id="modwikinot" method="post">
+            ${jmacros.form_token_input()}
 
-    <fieldset>
-    <legend>From Email Name</legend>
-    <label for="from_name">From Name:</label>
-      <input type="text" id="from_name" name="from_name"
-             value="${ wnoptions.from_name.value or
-                       wnoptions.from_name.default}"/>
-      <p class="help">$wnoptions.from_name.__doc__</p>
-    </fieldset>
+            # if wnoptions.errors:
+            <fieldset style="border-color:red;">
+                <legend style="color:red;">Extra Configuration Warnings</legend>
+                <dl>
+                    # for key, val in wnoptions.errors.iteritems():
+                    <dt>${key}</dt><dd>${val}</dd>
+                    # endfor
+                </dl>
+                <p class="help">These are errors that need to be fixed so that the email notifications are complete and correctly populated.</p>
+            </fieldset>
+            # endif
 
-    <fieldset>
-    <legend>CC Email Address(es)</legend>
-      <label for="smtp_always_cc">CC Adresses:</label><br/>
-      <textarea cols="60" rows="2" id="smtp_always_cc"
-                name="smtp_always_cc">${ ', '.join(
-        wnoptions.smtp_always_cc.value or wnoptions.smtp_always_cc.default
-      )}</textarea>
-      <p class="help">
-      <py:for each="line in wnoptions.smtp_always_cc.doc.split('\n\n')">
-        $line<br/>
-      </py:for>
-      </p>
-    </fieldset>
+            <fieldset>
+                <legend>From Email Address</legend>
+                <label for="from_email">From Email Address:</label>
+                <input type="text" id="from_email" name="from_email" value="${ wnoptions.from_email.value if wnoptions.from_email.value else wnoptions.from_email.default }"/>
+                <p class="help">${wnoptions.from_email.__doc__}</p>
+            </fieldset>
 
-    <fieldset>
-    <legend>BCC Email Address(es)</legend>
-      <label for="smtp_always_bcc">BCC Adresses:</label><br/>
-      <textarea cols="60" rows="2" id="smtp_always_bcc"
-                name="smtp_always_bcc">${ ', '.join(
-        wnoptions.smtp_always_bcc.value or wnoptions.smtp_always_bcc.default
-      )}</textarea>
-      <p class="help">
-      <py:for each="line in wnoptions.smtp_always_bcc.doc.split('\n\n')">
-        $line<br/>
-      </py:for>
-      </p>
-    </fieldset>
+            <fieldset>
+                <legend>From Email Name</legend>
+                <label for="from_name">From Name:</label>
+                <input type="text" id="from_name" name="from_name" value="${ wnoptions.from_name.value if wnoptions.from_name.value else wnoptions.from_name.default }"/>
+                <p class="help">${wnoptions.from_name.__doc__}</p>
+            </fieldset>
 
-    <fieldset>
-    <legend>Publicly CC</legend>
-    <label for="use_public_cc">Publicly CC:</label>
-      <input type="checkbox" id="use_public_cc" name="use_public_cc"
-             value="yes" checked="${ wnoptions.use_public_cc.checked }"/>
-      <p class="help">
-      <py:for each="line in wnoptions.use_public_cc.doc.split('\n\n')">
-        $line<br/>
-      </py:for>
-      </p>
-    </fieldset>
+            <fieldset>
+                <legend>CC Email Address(es)</legend>
+                <label for="smtp_always_cc">CC Adresses:</label><br/>
+                <textarea cols="60" rows="2" id="smtp_always_cc" name="smtp_always_cc">${ ', '.join(wnoptions.smtp_always_cc.value if wnoptions.smtp_always_cc.value else wnoptions.smtp_always_cc.default) }</textarea>
+                <p class="help">
+                # for line in wnoptions.smtp_always_cc.doc.split('\n\n'):
+                ${line}<br/>
+                # endfor
+                </p>
+            </fieldset>
 
-    <fieldset>
-    <legend>Attach Diff</legend>
-    <label for="attach_diff">Attach Diff:</label>
-      <input type="checkbox" id="attach_diff" name="attach_diff"
-             value="yes" checked="${ wnoptions.attach_diff.checked }"/>
-      <p class="help">$wnoptions.attach_diff.__doc__</p>
-    </fieldset>
+            <fieldset>
+                <legend>BCC Email Address(es)</legend>
+                <label for="smtp_always_bcc">BCC Adresses:</label><br/>
+                <textarea cols="60" rows="2" id="smtp_always_bcc" name="smtp_always_bcc">${ ', '.join(wnoptions.smtp_always_bcc.value if wnoptions.smtp_always_bcc.value else wnoptions.smtp_always_bcc.default) }</textarea>
+                <p class="help">
+                # for line in wnoptions.smtp_always_bcc.doc.split('\n\n'):
+                ${line}<br/>
+                # endfor
+                </p>
+            </fieldset>
 
-    <fieldset>
-    <legend>Redirection Time</legend>
-    <label for="redirect_time">Time:</label>
-      <input type="text" id="redirect_time" name="redirect_time"
-             value="${wnoptions.redirect_time.value or
-                      wnoptions.redirect_time.default}"/>
-      <p class="help">$wnoptions.redirect_time.__doc__</p>
-    </fieldset>
+            <fieldset>
+                <legend>Publicly CC</legend>
+                <label for="use_public_cc">Publicly CC:</label>
+                <input type="checkbox" id="use_public_cc" name="use_public_cc" value="yes" ${{'checked': wnoptions.use_public_cc.checked}|htmlattr}/>
+                <p class="help">
+                # for line in wnoptions.use_public_cc.doc.split('\n\n'):
+                ${line}<br/>
+                # endfor
+                </p>
+            </fieldset>
 
-    <fieldset>
-    <legend>Subject Template</legend>
-    <label for="subject_template">Subject Template:</label>
-      <input type="text" id="subject_template" name="subject_template"
-             value="${ wnoptions.subject_template.value or
-                       wnoptions.subject_template.default}"/>
-      <p class="help">$wnoptions.subject_template.__doc__</p>
-    </fieldset>
+            <fieldset>
+                <legend>Attach Diff</legend>
+                <label for="attach_diff">Attach Diff:</label>
+                <input type="checkbox" id="attach_diff" name="attach_diff" value="yes" ${{'checked': wnoptions.attach_diff.checked}|htmlattr}/>
+                <p class="help">${wnoptions.attach_diff.__doc__}</p>
+            </fieldset>
 
-    <fieldset>
-    <legend>Banned Email Address(es)</legend>
-      <label for="smtp_always_cc">Banned Addresses:</label><br/>
-      <textarea cols="60" rows="2" id="banned_addresses"
-                name="banned_addresses">${ ', '.join(
-        wnoptions.banned_addresses.value or wnoptions.banned_addresses.default
-      )}</textarea>
-      <p class="help">
-      <py:for each="line in wnoptions.banned_addresses.doc.split('\n\n')">
-        $line<br/>
-      </py:for>
-      </p>
-    </fieldset>
+            <fieldset>
+                <legend>Redirection Time</legend>
+                <label for="redirect_time">Time:</label>
+                <input type="text" id="redirect_time" name="redirect_time" value="${ wnoptions.redirect_time.value if wnoptions.redirect_time.value else wnoptions.redirect_time.default }"/>
+                <p class="help">${wnoptions.redirect_time.__doc__}</p>
+            </fieldset>
 
-    <div class="buttons">
-      <input type="submit" name="apply" value="Apply Changes" />
-    </div>
-  </form>
-</body>
+            <fieldset>
+                <legend>Subject Template</legend>
+                <label for="subject_template">Subject Template:</label>
+                <input type="text" id="subject_template" name="subject_template" value="${ wnoptions.subject_template.value if wnoptions.subject_template.value else wnoptions.subject_template.default }"/>
+                <p class="help">${wnoptions.subject_template.__doc__}</p>
+            </fieldset>
+
+            <fieldset>
+                <legend>Banned Email Address(es)</legend>
+                <label for="smtp_always_cc">Banned Addresses:</label><br/>
+                <textarea cols="60" rows="2" id="banned_addresses" name="banned_addresses">${ ', '.join(wnoptions.banned_addresses.value if wnoptions.banned_addresses.value else wnoptions.banned_addresses.default) }</textarea>
+                <p class="help">
+                # for line in wnoptions.banned_addresses.doc.split('\n\n'):
+                ${line}<br/>
+                # endfor
+                </p>
+            </fieldset>
+
+            <div class="buttons">
+                <input type="submit" name="apply" value="Apply Changes" />
+            </div>
+        </form>
+        # endblock adminpanel
+    </body>
 </html>

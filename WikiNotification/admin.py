@@ -12,7 +12,7 @@
 #
 # Please view LICENSE for additional licensing information.
 # =============================================================================
-from importlib.resources import files
+# from importlib.resources import files
 from trac.core import *
 from trac.web.chrome import ITemplateProvider
 from trac.admin import IAdminPanelProvider

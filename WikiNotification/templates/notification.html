@@ -9,7 +9,7 @@
         </title>
         # block head
         ${ super() }
-        # endblock
+        # endblock head
     </head>
     <body>
         # block content
@@ -34,7 +34,7 @@
                                     # for page in notification.list:
                                     <tr>
                                         <td><input type="checkbox" name="sel" value="$page" /></td>
-                                        <td style="width: 100%"><a href="${notification.wikiurl}/${page}">${page}</a></td>
+                                        <td style="width:100%;"><a href="${notification.wikiurl}/${page}">${page}</a></td>
                                     </tr>
                                     # endfor
                                 </tbody>

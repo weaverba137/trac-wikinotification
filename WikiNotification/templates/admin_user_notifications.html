@@ -1,31 +1,40 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:py="http://genshi.edgewall.org/"
-    xmlns:xi="http://www.w3.org/2001/XInclude">
-  <xi:include href="admin.html" />
-  <head>
-    <title>Notifications</title>
-  </head>
-  <body>
-    <h2>User Wiki Notifications</h2>
-    <table class="listing">
-      <thead>
-        <tr>
-          <th>SID's</th>
-          <th>Watched Wiki Pages</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr py:for="page in wpages">
-          <td>$page.sid</td>
-          <td width="100%">
-            <py:for each="wikipage in page.pages">
-            <a href="$wikiurl/$wikipage">$wikipage</a>&nbsp;
-            </py:for>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </body>
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block admintitle
+            ${_('Wiki Notifications')} ${ super() }
+            # endblock admintitle
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+        # block adminpanel
+        <h2>${_('User Wiki Notifications')}</h2>
+        <table class="listing">
+            <thead>
+                <tr><th>SIDs</th><th>Watched Wiki Pages</th></tr>
+            </thead>
+            <tbody>
+                # for page in wpages:
+                <tr>
+                  <td>${page.sid}</td>
+                  <td style="width:100%;">
+                  # for wikipage in page.pages:
+                  # if loop.last:
+                  <a href="${wikiurl}/${wikipage}">${wikipage}</a>
+                  # else:
+                  <a href="${wikiurl}/${wikipage}">${wikipage}</a>,
+                  # endif
+                  # endfor
+                  </td>
+                </tr>
+                # endfor
+            </tbody>
+        </table>
+        # endblock adminpanel
+    </body>
 </html>
