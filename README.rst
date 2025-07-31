@@ -154,6 +154,4 @@ break any of the logic in that template.
 Upgrade Notes
 -------------
 
-* Convert templates to Jinja2.
-* ``admin.py``, ``listener.py`` and ``web_ui.py`` probably do not need further changes, pending testing.
-* Possibly implement *some* of the upgrades as a test, *e.g.* only implement the admin panel.
+* Still need to implement the various CC, and blacklist options.

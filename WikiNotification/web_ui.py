@@ -15,11 +15,10 @@
 
 import re
 from trac.core import *
+from trac.util.html import tag
 from trac.web.chrome import INavigationContributor, ITemplateProvider, add_script, add_script_data
 from trac.web import IRequestHandler
 from trac.web.api import IRequestFilter
-from trac.config import Option
-from trac.util.html import tag
 
 from pkg_resources import resource_filename
 # from importlib.resources import files
@@ -29,8 +28,6 @@ class WikiNotificationWebModule(Component):
 
     implements(INavigationContributor, IRequestHandler, ITemplateProvider,
                IRequestFilter)
-
-    redirect_time = Option('wiki-notification', 'redirect_time', default=5)
 
     # ITemplateProvider methods
     def get_htdocs_dirs(self):
@@ -88,10 +85,9 @@ class WikiNotificationWebModule(Component):
         notification = {'wikiurl': req.href.wiki(),
                         'my_not_url': req.href.notification()}
         try:
-            notification['redirect_time'] = \
-                req.session['watched_pages.redirect_time']
+            notification['redirect_time'] = req.session['watched_pages.redirect_time']
         except KeyError:
-            notification['redirect_time'] = self.redirect_time
+            notification['redirect_time'] = self.config.getint('wiki-notification', 'redirect_time', 5)
 
         wikipage = req.args.get('notification.wikipage', False)
         watched = self._get_watched_pages(req)

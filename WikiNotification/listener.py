@@ -12,19 +12,26 @@
 #
 # Please view LICENSE for additional licensing information.
 # =============================================================================
-
+from email.mime.text import MIMEText
 import inspect
-from trac.config import Option, BoolOption, ListOption, IntOption
 from trac.core import *
 from trac.notification.api import IEmailDecorator, INotificationFormatter, NotificationEvent, NotificationSystem
-from trac.notification.mail import RecipientMatcher, create_charset, create_mime_multipart, create_mime_text, set_header
+from trac.notification.mail import RecipientMatcher, set_header
 from trac.perm import PermissionSystem
 from trac.resource import Resource
 from trac.util.text import exception_to_unicode
 from trac.util.translation import deactivate, reactivate
+from trac.versioncontrol.diff import unified_diff
 from trac.web.chrome import Chrome
 from trac.wiki.api import IWikiChangeListener
-# from .notification import WikiNotifyEmail
+from trac.wiki.model import WikiPage
+
+
+diff_header = """Index: {name}
+=========================================================================
+--- {name} (version: {oldversion})
++++ {name} (version: {version})
+"""
 
 
 class WikiNotificationError(TracError):
@@ -34,72 +41,60 @@ class WikiNotificationError(TracError):
 class WikiNotificationChangeEvent(NotificationEvent):
     realm = 'wiki'
 
-    def __init__(self, category, page, time, author):
+    def __init__(self, category, page, time, author,
+                 version=None, comment=None,
+                 old_name=None, old_comment=None, redirect=False):
         super(WikiNotificationChangeEvent, self).__init__(self.realm, category, page, time, author)
-        # self.data = data
+        self.version = version
+        self.comment = comment
+        self.old_name = old_name
+        self.old_comment = old_comment
+        self.redirect = redirect
 
 
 class WikiNotificationChangeListener(Component):
-    """Class that listens for wiki changes."""
+    """Class that listens for wiki changes.
+    """
+
     implements(IWikiChangeListener)
 
-    from_email = Option(
-        'wiki-notification', 'from_email', 'trac+wiki@localhost',
-        """Sender address to use in notification emails.""")
+    # IWikiChangeListener methods
 
-    from_name = Option(
-        'wiki-notification', 'from_name', None,
-        """Sender name to use in notification emails.
+    def wiki_page_added(self, page):
+        version, time, author, comment = page.get_history().next()
+        self._send_notification('added', page, version, time, comment, author)
 
-        Defaults to project name.""")
+    def wiki_page_changed(self, page, version, time, comment, author):
+        self._send_notification('changed', page, version, time, comment, author)
 
-    smtp_always_cc = ListOption(
-        'wiki-notification', 'smtp_always_cc', [],
-        doc="""Comma separated list of email address(es) to always send
-        notifications to.
+    def wiki_page_deleted(self, page):
+        req = self._get_req()
+        author = req and req.authname or 'trac'
+        self._send_notification('deleted', page, None, None, None, author)
 
-        Addresses can be seen by all recipients (Cc:).""")
+    def wiki_page_version_deleted(self, page):
+        req = self._get_req()
+        author = req and req.authname or 'trac'
+        version, _time, _author, _comment = page.get_history().next()
+        self._send_notification('version deleted', page, version+1, None, None, author)
 
-    smtp_always_bcc = ListOption(
-        'wiki-notification', 'smtp_always_bcc', [],
-        doc="""Comma separated list of email address(es) to always send
-        notifications to.
+    def wiki_page_renamed(self, page, old_name):
+        req = self._get_req()
+        author = req and req.authname or 'trac'
+        redirect = req and req.args.get('redirect') or None
+        self._watch_renamed_page(page.name, old_name)
+        self._send_notification('renamed', page, None, None, None, author, old_name=old_name, redirect=redirect)
 
-        Addresses do not appear publicly (Bcc:).""")
-
-    use_public_cc = BoolOption(
-        'wiki-notification', 'use_public_cc', False,
-        """Recipients can see email addresses of other CC'ed recipients.
-
-        If this option is disabled(the default),
-        recipients are put on BCC.
-
-        (values: 1, on, enabled, true or 0, off, disabled, false)""")
-
-    attach_diff = BoolOption(
-        'wiki-notification', 'attach_diff', False,
-        """Send `diff`'s as an attachment instead of inline in email body.""")
-
-    redirect_time = IntOption(
-        'wiki-notification', 'redirect_time', 5,
-        """The default seconds a redirect should take when
-        watching/un-watching a wiki page""")
-
-    subject_template = Option(
-        'wiki-notification', 'subject_template', '$prefix $pagename $action',
-        "A Genshi text template snippet used to get the notification subject.")
-
-    banned_addresses = ListOption(
-        'wiki-notification', 'banned_addresses', [],
-        doc="""A comma separated list of email addresses that should never be
-        sent a notification email.""")
-
-    # def __init__(self, *args, **kwargs):
-    #     super(Component, self).__init__(*args, **kwargs)
+    def wiki_page_comment_modified(self, page, old_comment):
+        req = self._get_req()
+        author = req and req.authname or 'trac'
+        self._send_notification('comment modified', page, None, None, None, author, old_comment=old_comment)
 
     # Internal Methods
+
     def _get_req(self):
-        """Grab req from the stack"""
+        """Grab req from the stack.
+        """
         frame = inspect.currentframe()
         try:
             while frame.f_back:
@@ -112,8 +107,12 @@ class WikiNotificationChangeListener(Component):
             del frame
         return None
 
-    def _send_notification(self, category, page, version, time, comment, author):
-        event = WikiNotificationChangeEvent(category, page, time, author)
+    def _send_notification(self, category, page, version, time, comment, author,
+                           old_name=None, old_comment=None, redirect=False):
+        event = WikiNotificationChangeEvent(category, page, time, author,
+                                            version=version, comment=comment,
+                                            old_name=old_name, old_comment=old_comment,
+                                            redirect=redirect)
         subscriptions = self._subscriptions(event)
         try:
             NotificationSystem(self.env).distribute_event(event, subscriptions)
@@ -142,47 +141,6 @@ class WikiNotificationChangeListener(Component):
                     if recipient:
                         yield recipient + transport_and_format
 
-    # IWikiChangeListener methods
-    def wiki_page_added(self, page):
-        version, time, author, comment = page.get_history().next()
-        self._send_notification('added', page, version, time, comment, author)
-        # wne = WikiNotifyEmail(page.env)
-        # wne.notify("added", page, version, time, comment, author, ipnr)
-
-    def wiki_page_changed(self, page, version, time, comment, author):
-        self._send_notification('modified', page, version, time, comment, author)
-        # wne = WikiNotifyEmail(page.env)
-        # wne.notify("modified", page, version, time, comment, author, ipnr)
-
-    def wiki_page_deleted(self, page):
-        req = self._get_req()
-        author = req and req.authname or 'trac'
-        self._send_notification('deleted', page, None, None, None, author)
-        # wne = WikiNotifyEmail(page.env)
-        # wne.notify("deleted", page, author=author)
-
-    def wiki_page_version_deleted(self, page):
-        req = self._get_req()
-        author = req and req.authname or 'trac'
-        version, _time, _author, _comment = page.get_history().next()
-        self._send_notification('deleted_version', page, version+1, None, None, author)
-        # wne = WikiNotifyEmail(page.env)
-        # wne.notify("deleted_version", page, version=version +
-        #            1, author=author)
-
-    def wiki_page_renamed(self, page, old_name):
-        req = self._get_req()
-        author = req and req.authname or 'trac'
-        redirect = req and req.args.get('redirect') or None
-        self._watch_renamed_page(page.name, old_name)
-        self._send_notification('renamed', page, None, None, None, author)
-        # wne = WikiNotifyEmail(page.env)
-        # wne.notify("renamed", page, author=author, ipnr=ipnr,
-        #            redirect=redirect, old_name=old_name)
-
-    def wiki_page_comment_modified(self, page, old_comment):
-        pass
-
     def _watch_renamed_page(self, pagename, old_pagename):
         with self.env.db_transaction as db:
             cursor = db.cursor()
@@ -191,16 +149,26 @@ class WikiNotificationChangeListener(Component):
 
 
 class WikiNotificationNotificationFormatter(Component):
-
     implements(IEmailDecorator, INotificationFormatter)
 
     realm = 'wiki'
+    template_name = "wiki_notification_email_template.txt"
 
     # IEmailDecorator methods
 
     def decorate_message(self, event, message, charset):
         if event.realm != self.realm:
             return
+        # Set the subject
+        subject = self._format_subject(event)
+        set_header(message, 'Subject', subject, charset)
+        # Attach diff, if configured that way.
+        attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
+        if attach_diff:
+            wikidiff = self._obtain_diff(event)
+            part = MIMEText(wikidiff.encode('utf-8'), 'x-diff', charset)
+            part['Content-Disposition'] = f'attachment; filename={event.page.name}.diff'
+            message.attach(part)
 
     # INotificationFormatter methods
 
@@ -210,18 +178,56 @@ class WikiNotificationNotificationFormatter(Component):
     def format(self, transport, style, event):
         if event.realm != self.realm:
             return
-        data = dict()
         t = deactivate()
         try:
-            return self._format_body(data, template_name)
+            return self._format_body(event)
         finally:
             reactivate(t)
 
     # Helper methods
 
-    def _format_body(self, data, template_name):
+    def _format_body(self, event):
+        format_data = dict()
+        format_data['action'] = event.category
+        format_data['author'] = event.author
+        format_data['name'] = event.page.name
+        format_data['comment'] = event.comment
+        format_data['text'] = event.page.text
+        format_data['link'] = self.env.abs_href.wiki(event.page.name)
+        format_data['linkdiff'] = self.env.abs_href.wiki(event.page.name, action='diff',
+                                                         version=event.page.version)
+        format_data['version'] = event.page.version
+        attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
+        if attach_diff:
+            format_data['wikidiff'] = None
+        else:
+            format_data['wikidiff'] = self._obtain_diff(event)
+        chrome = Chrome(self.env)
+        data = chrome.populate_data(None, format_data)
+        template = chrome.load_template(self.template_name, text=True)
+        body = chrome.render_template_string(template, data, text=True)
+        return body.encode('utf-8')
+
+    def _format_subject(self, event):
+        template = self.config.get('wiki-notification', 'subject_template')
+        prefix = self.config.get('notification', 'smtp_subject_prefix')
+        if prefix == '__default__':
+            prefix = f'[{self.config.get('project', 'name')}]'
+        data = {'pagename': event.old_name or event.page.name,
+                'prefix': prefix,
+                'action': event.category,
+                'env': self.env}
         chrome = Chrome(self.env)
         data = chrome.populate_data(None, data)
-        template = chrome.load_template(template_name, text=True)
-        body =  chrome.render_template_string(template, data, text=True)
-        return body.encode('utf-8')
+        return chrome.render_template_string(template, data, text=True)
+
+    def _obtain_diff(self, event):
+        if event.category == 'modified' and event.page.version > 0:
+            diff = diff_header.format(name=event.page.name,
+                                      version=event.page.version,
+                                      oldversion=event.page.version-1)
+            oldpage = WikiPage(self.env, event.page.name, event.page.version - 1)
+            for line in unified_diff(oldpage.text.splitlines(),
+                                     event.page.text.splitlines(), context=3):
+                diff += f"{line}\n"
+        return diff

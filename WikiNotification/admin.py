@@ -17,7 +17,6 @@ from trac.core import *
 from trac.web.chrome import ITemplateProvider
 from trac.admin import IAdminPanelProvider
 from trac.config import Option
-# from trac.util.html import Markup, tag
 
 
 class WikiNotificationAdminPanel(Component):
