@@ -232,7 +232,7 @@ class WikiNotificationNotificationFormatter(Component):
         return template.format(**data)
 
     def _obtain_diff(self, event):
-        if event.category == 'modified' and event.target.version > 0:
+        if event.category == 'changed' and event.target.version > 0:
             diff = diff_header.format(name=event.target.name,
                                       version=event.target.version,
                                       oldversion=event.target.version-1)
@@ -240,4 +240,5 @@ class WikiNotificationNotificationFormatter(Component):
             for line in unified_diff(oldpage.text.splitlines(),
                                      event.target.text.splitlines(), context=3):
                 diff += f"{line}\n"
-        return diff
+            return diff
+        return None
