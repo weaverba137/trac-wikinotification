@@ -50,7 +50,11 @@ class WikiNotificationWebModule(Component):
                             title="Wiki Pages Change Notifications",
                             href=req.href.notification()))
 
-    # IRequestFilter method
+    # IRequestFilter methods
+
+    def pre_process_request(self, handler):
+        return handler
+
     def post_process_request(self, req, template, data, content_type):
         if template == 'wiki_view.html' and self.config.getbool('notification', 'smtp_enabled', False):
             self.log.debug("Adding (un)watch links.")
