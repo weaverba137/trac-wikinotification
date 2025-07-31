@@ -86,9 +86,8 @@
             ## self is window.
             <script type="text/javascript">
                 function redirectBack() {
-                    var redirurl = "${notification.redir}";
-                    var redirect_time = ${notification.redirect_time}*1000;
-                    self.setTimeout("self.location.href = redirurl;", redirect_time);
+                    redirurl = "${notification.redir}";
+                    self.setTimeout("self.location.href = redirurl;", ${notification.redirect_time}*1000);
                 }
             </script>
             <h2>${ notification.action.capitalize() }</h2>
