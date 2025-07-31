@@ -118,7 +118,7 @@ class WikiNotificationAdminPanel(Component):
             attrs = {}
             attrs['sid'] = user
             attrs['authenticated'] = authenticated
-            attrs['pages'] = pages.strip(',').split(',')
+            attrs['pages'] = list(sorted(pages.strip(',').split(',')))
             notified_users.append(attrs)
 
         return 'admin_user_notifications.html', {'wpages': notified_users,
