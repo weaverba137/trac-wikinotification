@@ -83,7 +83,7 @@ class WikiNotificationWebModule(Component):
         if 'email' not in req.session:
             data = {'notification': {'error': True},
                     'prefs': {'url': req.href.prefs()}}
-            return 'notification.html', data, None
+            return 'notification.html', data
 
         notification = {'wikiurl': req.href.wiki(),
                         'my_not_url': req.href.notification()}
@@ -129,7 +129,7 @@ class WikiNotificationWebModule(Component):
                 notification['showlist'] = True
                 notification['list'] = watched
 
-        return 'notification.html', {'notification': notification}, None
+        return 'notification.html', {'notification': notification}
 
     # Internal methods
     def _get_watched_pages(self, req):

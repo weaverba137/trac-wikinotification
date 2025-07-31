@@ -1,78 +1,120 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:py="http://genshi.edgewall.org/"
-    xmlns:xi="http://www.w3.org/2001/XInclude">
-<xi:include href="layout.html" />
-<head>
-  <title>Notifications</title>
-</head>
-<body>
-  <div id="content" class="notification">
-  <py:choose test="notification.error">
-  <py:when test="True">
-    <h1>Notification Error</h1>
-    <div class="system-message">
-      <p>You must add your email address to <a href="$prefs.url">Preferences</a>
-      in order to be able to use wiki notifications</p>
-    </div>
-  </py:when> <!-- py:when notification.error==True ended -->
-  <py:otherwise> <!-- py:when notification.error!=True -->
-    <py:choose test="notification.showlist">
-    <py:when test="True">
-      <table width="100%" cellpadding="4" cellspacing="4">
-        <tr>
-          <td width="100%" style="vertical-align: top;">
-            <xi:include href="notifications_list.html"/>
-          </td>
-          <td style="white-space: nowrap; vertical-align: top;">
-            <xi:include href="notifications_forms.html"/>
-          </td>
-        </tr>
-      </table>
-    </py:when>
-    <py:otherwise>
-      <script language="JavaScript">
-        function redirectBack() {
-            redirurl = "$notification.redir";
-            redirect_time = $notification.redirect_time*1000;
-            self.setTimeout("self.location.href = redirurl;", redirect_time);
-        }
-      </script>
-      <fieldset>
-        <legend>${ notification.action.capitalize() }</legend>
-        <py:choose test="notification.action == 'watch'">
-        <py:when test="True">
-        <h1>You will now receive email's about changes made on
-            <a href="$notification.wikipage.url">$notification.wikipage</a>.
-        </h1>
-        </py:when>
-        <py:otherwise>
-        <h1>No more emails about changes made on
-          <py:choose>
-            <py:for py:when="len(notification.removelist) == 1"
-                each="item in notification.removelist">
-                <a href="$notification.wikiurl/$item">$item</a>
-            </py:for>
-            <py:for py:when="len(notification.removelist) > 1"
-                each="item in notification.removelist">
-                <a href="$notification.wikiurl/$item">$item</a>,
-            </py:for>
-          <a py:otherwise=""
-             href="$notification.wikiurl/$notification.wikipage">$notification.wikipage</a>
-          </py:choose> will be sent to you.</h1>
-        </py:otherwise>
-        </py:choose>
-        <p>Redirecting you back in $notification.redirect_time seconds,
-           if it fails, please <a href="$notification.redir">click here</a></p>
-        <p>A list of the wiki pages you're watching can be found on
-           <a href="$notification.my_not_url">My Notifications</a>.</p>
-      </fieldset>
-      <script type="text/javascript">redirectBack();</script>
-    </py:otherwise>
-    </py:choose>
-  </py:otherwise> <!-- py:when notification.error!=True ended -->
-  </py:choose> <!-- py:choose test="notification.error" ended -->
-  </div>
-</body>
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block title
+            ${_('Notifications')} ${ super() }
+            # endblock title
+        </title>
+        # block head
+        ${ super() }
+        # endblock
+    </head>
+    <body>
+        # block content
+        <div id="content" class="notification">
+            # if notification.error:
+            <h1>${_('Notification Error')}</h1>
+            <div class="system-message">
+                <p>You must add your email address to <a href="${prefs.url}">Preferences</a> in order to be able to use wiki notifications.</p>
+            </div>
+            # else:
+            <h1>${_('Notifications')}</h1>
+            # if notification.showlist:
+            <table width="100%" cellpadding="4" cellspacing="4">
+                <tr>
+                    <td width="100%" style="vertical-align: top;">
+                        # if len(notification.list) is greaterthan(0):
+                        <form method="post" action="${notification.my_not_url}">
+                            <h2>${_('List of Watched Pages')}</h2>
+                            <table class="listing" id="watched_pages_list">
+                                <thead><tr><th class="sel"></th><th>Watched Wiki Pages</th></tr></thead>
+                                <tbody>
+                                    # for page in notification.list:
+                                    <tr>
+                                        <td><input type="checkbox" name="sel" value="$page" /></td>
+                                        <td style="width: 100%"><a href="${notification.wikiurl}/${page}">${page}</a></td>
+                                    </tr>
+                                    # endfor
+                                </tbody>
+                            </table>
+                            <div class="buttons">
+                                <input type="submit" name="remove" value="Stop watching selected wiki pages"/>
+                            </div>
+                        </form>
+                        # else:
+                        <h2>${_('You are not watching any wiki pages.')}</h2>
+                        # endif
+                    </td>
+                    <td style="white-space: nowrap; vertical-align: top;">
+                        <form id="notification" class="notification" method="post" action="${notification.my_not_url}">
+                            ${jmacros.form_token_input()}
+                            <fieldset>
+                                <legend>Notification Settings</legend>
+                                <div class="field">
+                                    <label for="redirect_time">How many seconds should the redirect take?</label>
+                                    <input type="text" name="redirect_time" id="redirect_time"
+                                        size="2" class="textwidget"
+                                        value="${notification.redirect_time}" /><br/>
+                                    <input name="update" value="Update" type="submit" />
+                                </div>
+                            </fieldset>
+                            <fieldset style="white-space: normal;">
+                                <legend>How To Use</legend>
+                                <span id="wn-help-message">
+                                In order to get notified of a change on a wiki page, when on that
+                                specific wiki page, right next to the <em>Start Page</em>, <em>Index</em>,
+                                <em>History</em> and <em>Last Change</em> (at least) links, you will also
+                                see <strong>Watch Page</strong> in case you're not watching that page or
+                                <strong>Un-Watch Page</strong> in case you're watching it.<br/>
+                                Clicking on that link will change your notification status for that
+                                specific page.<br/><br/>
+                                On the left of <a href="${notification.my_not_url}">My Notifications</a>
+                                you'll see a table containing all your current subscriptions.<br/>
+                                There you can visit the wiki pages that you're subscribed to and also
+                                remove the wiki page(s) you wish to never get notified of again, by
+                                checking the <em>checkboxes</em> on the left and clicking <strong>Stop watching
+                                selected wiki pages</strong>.
+                                </span>
+                            </fieldset>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+            # else:
+            ## self is window.
+            <script type="text/javascript">
+                function redirectBack() {
+                    var redirurl = "${notification.redir}";
+                    var redirect_time = ${notification.redirect_time}*1000;
+                    self.setTimeout("self.location.href = redirurl;", redirect_time);
+                }
+            </script>
+            <h2>${ notification.action.capitalize() }</h2>
+            # if notification.action == 'watch':
+            <h3>You will now receive emails about changes made on <a href="${notification.wikipage.url}">${notification.wikipage}</a>.</h3>
+            # else:
+            <h3>No more emails about changes made on
+            # if notification.removelist:
+            # for item in notification.removelist:
+            # if loop.last:
+            <a href="${notification.wikiurl}/${item}">${item}</a>
+            # else:
+            <a href="${notification.wikiurl}/${item}">${item}</a>,
+            # endif
+            # endfor
+            # else:
+            <a href="${notification.wikiurl}/${notification.wikipage}">${notification.wikipage}</a>
+            # endif
+            will be sent to you.</h3>
+            # endif
+            <p>Redirecting you back in ${notification.redirect_time} seconds, if it fails, please <a href="${notification.redir}">click here</a>.</p>
+            <p>A list of the wiki pages you're watching can be found on <a href="${notification.my_not_url}">My Notifications</a>.</p>
+            <script type="text/javascript">redirectBack();</script>
+            # endif
+            # endif
+        </div>
+        # endblock content
+    </body>
 </html>
