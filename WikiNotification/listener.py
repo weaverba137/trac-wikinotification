@@ -212,7 +212,7 @@ class WikiNotificationNotificationFormatter(Component):
         template = self.config.get('wiki-notification', 'subject_template')
         prefix = self.config.get('notification', 'smtp_subject_prefix')
         if prefix == '__default__':
-            prefix = f'[{self.config.get('project', 'name')}]'
+            prefix = f"[{self.config.get('project', 'name')}]"
         data = {'pagename': event.old_name or event.page.name,
                 'prefix': prefix,
                 'action': event.category,
