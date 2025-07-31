@@ -127,13 +127,14 @@ class WikiNotificationChangeListener(Component):
                         WHERE name=%s AND value LIKE %s"""
         transport_and_format = ('email', 'text/plain')
         matcher = RecipientMatcher(self.env)
+        page = event.target
         with self.env.db_query as db:
             cursor = db.cursor()
-            cursor.execute(QUERY_SIDS, ('watched_pages', '%,' + event.page.name + ',%'))
+            cursor.execute(QUERY_SIDS, ('watched_pages', '%,' + page.name + ',%'))
             sids = cursor.fetchall()
             self.env.log.debug("SID'S TO NOTIFY: %s", sids)
             perm = PermissionSystem(self.env)
-            resource = Resource('wiki', event.page.name)
+            resource = Resource('wiki', page.name)
             for sid in sids:
                 if sid[0] != event.author and perm.check_permission(action='WIKI_VIEW', username=sid[0], resource=resource):
                     self.env.log.debug('SID: %s', sid[0])
@@ -167,7 +168,7 @@ class WikiNotificationNotificationFormatter(Component):
         if attach_diff:
             wikidiff = self._obtain_diff(event)
             part = MIMEText(wikidiff.encode('utf-8'), 'x-diff', charset)
-            part['Content-Disposition'] = f'attachment; filename={event.page.name}.diff'
+            part['Content-Disposition'] = f'attachment; filename={event.target.name}.diff'
             message.attach(part)
 
     # INotificationFormatter methods
@@ -190,13 +191,13 @@ class WikiNotificationNotificationFormatter(Component):
         format_data = dict()
         format_data['action'] = event.category
         format_data['author'] = event.author
-        format_data['name'] = event.page.name
+        format_data['name'] = event.target.name
         format_data['comment'] = event.comment
-        format_data['text'] = event.page.text
-        format_data['link'] = self.env.abs_href.wiki(event.page.name)
-        format_data['linkdiff'] = self.env.abs_href.wiki(event.page.name, action='diff',
-                                                         version=event.page.version)
-        format_data['version'] = event.page.version
+        format_data['text'] = event.target.text
+        format_data['link'] = self.env.abs_href.wiki(event.target.name)
+        format_data['linkdiff'] = self.env.abs_href.wiki(event.target.name, action='diff',
+                                                         version=event.target.version)
+        format_data['version'] = event.target.version
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
         if attach_diff:
             format_data['wikidiff'] = None
@@ -213,7 +214,7 @@ class WikiNotificationNotificationFormatter(Component):
         prefix = self.config.get('notification', 'smtp_subject_prefix')
         if prefix == '__default__':
             prefix = f"[{self.config.get('project', 'name')}]"
-        data = {'pagename': event.old_name or event.page.name,
+        data = {'pagename': event.old_name or event.target.name,
                 'prefix': prefix,
                 'action': event.category,
                 'env': self.env}
@@ -222,12 +223,12 @@ class WikiNotificationNotificationFormatter(Component):
         return chrome.render_template_string(template, data, text=True)
 
     def _obtain_diff(self, event):
-        if event.category == 'modified' and event.page.version > 0:
-            diff = diff_header.format(name=event.page.name,
-                                      version=event.page.version,
-                                      oldversion=event.page.version-1)
-            oldpage = WikiPage(self.env, event.page.name, event.page.version - 1)
+        if event.category == 'modified' and event.target.version > 0:
+            diff = diff_header.format(name=event.target.name,
+                                      version=event.target.version,
+                                      oldversion=event.target.version-1)
+            oldpage = WikiPage(self.env, event.target.name, event.target.version - 1)
             for line in unified_diff(oldpage.text.splitlines(),
-                                     event.page.text.splitlines(), context=3):
+                                     event.target.text.splitlines(), context=3):
                 diff += f"{line}\n"
         return diff
