@@ -154,4 +154,4 @@ break any of the logic in that template.
 Upgrade Notes
 -------------
 
-* Still need to implement the various CC, and blacklist options.
+* Still need to implement the various CC options.

@@ -129,6 +129,7 @@ class WikiNotificationChangeListener(Component):
         matcher = RecipientMatcher(self.env)
         page = event.target
         notify_author = self.config.getbool('wiki-notification', 'notify_author')
+        blacklist = self.config.getlist('wiki-notification', 'banned_addresses')
         with self.env.db_query as db:
             cursor = db.cursor()
             cursor.execute(QUERY_SIDS, ('watched_pages', '%,' + page.name + ',%'))
@@ -138,15 +139,18 @@ class WikiNotificationChangeListener(Component):
             resource = Resource('wiki', page.name)
             for sid in sids:
                 if sid[0] == event.author and not notify_author:
-                    self.log.debug('Skipping notification of author sid="%s".', sid[0])
+                    self.log.debug('Skipping notification of sid="%s"; notify_author=False.', sid[0])
                     continue
                 if not perm.check_permission(action='WIKI_VIEW', username=sid[0], resource=resource):
                     self.log.debug('Skipping notification of sid="%s"; permission denied.', sid[0])
                     continue
                 self.log.debug('Notifying sid="%s".', sid[0])
                 recipient = matcher.match_recipient(sid[0])
-                self.log.debug('recipient = %s', recipient)
                 if recipient:
+                    self.log.debug('recipient = %s', recipient)
+                    if recipient[2] in blacklist:
+                        self.log.debug('Skipping notification of sid="%s"; email "%s" is blacklisted.', sid[0], recipient[2])
+                        continue
                     yield recipient + transport_and_format
 
     def _watch_renamed_page(self, pagename, old_pagename):
@@ -225,9 +229,7 @@ class WikiNotificationNotificationFormatter(Component):
                 'prefix': prefix,
                 'action': event.category,
                 'env': self.env}
-        chrome = Chrome(self.env)
-        data = chrome.populate_data(None, data)
-        return chrome.render_template_string(template, data, text=True)
+        return template.format(**data)
 
     def _obtain_diff(self, event):
         if event.category == 'modified' and event.target.version > 0:

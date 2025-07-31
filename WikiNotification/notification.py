@@ -52,7 +52,7 @@ class WikiNotificationSystem(Component):
 
     attach_diff = BoolOption(
         'wiki-notification', 'attach_diff', False,
-        """Send `diff`'s as an attachment instead of inline in email body.""")
+        """Send <code>diff</code> output as an attachment instead of inline in email body.""")
 
     notify_author = BoolOption(
         'wiki-notification', 'notify_author', False,
@@ -66,8 +66,9 @@ class WikiNotificationSystem(Component):
         watching/un-watching a wiki page.""")
 
     subject_template = Option(
-        'wiki-notification', 'subject_template', '${prefix} ${pagename} ${action}',
-        "A Jinja2 text template snippet used to get the notification subject.")
+        'wiki-notification', 'subject_template', '{prefix} {pagename} {action}',
+        """A Python <a href="https://docs.python.org/3/library/stdtypes.html#str.format">format() style</a>
+        text template snippet used to create the notification subject.""")
 
     banned_addresses = ListOption(
         'wiki-notification', 'banned_addresses', [],
