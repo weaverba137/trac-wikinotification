@@ -52,7 +52,7 @@ class WikiNotificationWebModule(Component):
 
     # IRequestFilter methods
 
-    def pre_process_request(self, handler):
+    def pre_process_request(self, req, handler):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
