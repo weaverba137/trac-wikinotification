@@ -112,7 +112,7 @@ class WikiNotificationAdminPanel(Component):
 
     def _do_users(self, req, cat, page, path_info):
         sql = "SELECT sid,authenticated,value " + \
-              "FROM session_attribute WHERE name = 'watched_pages';"
+              "FROM session_attribute WHERE name = 'watched_pages' ORDER BY sid;"
         notified_users = []
         for user, authenticated, pages in self.env.db_query(sql):
             attrs = {}

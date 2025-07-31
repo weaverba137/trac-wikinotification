@@ -134,7 +134,7 @@ class WikiNotificationWebModule(Component):
     # Internal methods
     def _get_watched_pages(self, req):
         try:
-            watched = req.session['watched_pages'].strip(',').split(',')
+            watched = list(sorted(req.session['watched_pages'].strip(',').split(',')))
             self.log.debug('WATCHED PAGES: %s', watched)
             return watched
         except KeyError:
