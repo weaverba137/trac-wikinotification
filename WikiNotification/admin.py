@@ -74,7 +74,7 @@ class WikiNotificationAdminPanel(Component):
         for option in [option for option in Option.registry.values()
                        if option.section == 'wiki-notification']:
             value = ''
-            if option.name in ('use_public_cc', 'attach_diff'):
+            if option.name in ('use_public_cc', 'attach_diff', 'notify_author'):
                 value = self.config.getbool('wiki-notification', option.name,
                                             option.default)
                 if value == True:
@@ -96,10 +96,10 @@ class WikiNotificationAdminPanel(Component):
         self._get_extra_config_errors()
 
         if req.method == 'POST':
-            for option in ('redirect_time', 'smtp_always_bcc', 'smtp_always_cc',
-                           'from_email', 'use_public_cc', 'banned_addresses',
-                           'attach_diff', 'subject_template', 'from_name'):
-                if option in ('use_public_cc', 'attach_diff'):
+            for option in ('from_email', 'from_name',  'smtp_always_cc', 'smtp_always_bcc',
+                           'use_public_cc', 'attach_diff', 'notify_author', 'redirect_time',
+                           'subject_template', 'banned_addresses'):
+                if option in ('use_public_cc', 'attach_diff', 'notify_author'):
                     self.config.set('wiki-notification', option,
                                     (req.args.get(option) == 'yes') and
                                     'true' or 'false')

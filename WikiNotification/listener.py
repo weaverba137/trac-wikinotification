@@ -128,19 +128,26 @@ class WikiNotificationChangeListener(Component):
         transport_and_format = ('email', 'text/plain')
         matcher = RecipientMatcher(self.env)
         page = event.target
+        notify_author = self.config.getbool('wiki-notification', 'notify_author')
         with self.env.db_query as db:
             cursor = db.cursor()
             cursor.execute(QUERY_SIDS, ('watched_pages', '%,' + page.name + ',%'))
             sids = cursor.fetchall()
-            self.env.log.debug("SID'S TO NOTIFY: %s", sids)
+            self.log.debug("SIDs to notify: %s", sids)
             perm = PermissionSystem(self.env)
             resource = Resource('wiki', page.name)
             for sid in sids:
-                if sid[0] != event.author and perm.check_permission(action='WIKI_VIEW', username=sid[0], resource=resource):
-                    self.env.log.debug('SID: %s', sid[0])
-                    recipient = matcher.match_recipient(sid[0])
-                    if recipient:
-                        yield recipient + transport_and_format
+                if sid[0] == event.author and not notify_author:
+                    self.log.debug('Skipping notification of author sid="%s".', sid[0])
+                    continue
+                if not perm.check_permission(action='WIKI_VIEW', username=sid[0], resource=resource):
+                    self.log.debug('Skipping notification of sid="%s"; permission denied.', sid[0])
+                    continue
+                self.log.debug('Notifying sid="%s".', sid[0])
+                recipient = matcher.match_recipient(sid[0])
+                self.log.debug('recipient = %s', recipient)
+                if recipient:
+                    yield recipient + transport_and_format
 
     def _watch_renamed_page(self, pagename, old_pagename):
         with self.env.db_transaction as db:

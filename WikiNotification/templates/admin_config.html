@@ -84,6 +84,17 @@
             </fieldset>
 
             <fieldset>
+                <legend>Notify Author</legend>
+                <label for="notify_author">Notify Author:</label>
+                <input type="checkbox" id="notify_author" name="notify_author" value="yes" ${{'checked': wnoptions.notify_author.checked}|htmlattr}/>
+                <p class="help">
+                # for line in wnoptions.notify_author.doc.split('\n\n'):
+                ${line}<br/>
+                # endfor
+                </p>
+            </fieldset>
+
+            <fieldset>
                 <legend>Redirection Time</legend>
                 <label for="redirect_time">Time:</label>
                 <input type="text" id="redirect_time" name="redirect_time" value="${ wnoptions.redirect_time.value if wnoptions.redirect_time.value else wnoptions.redirect_time.default }"/>

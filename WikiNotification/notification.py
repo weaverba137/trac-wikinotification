@@ -47,14 +47,18 @@ class WikiNotificationSystem(Component):
         'wiki-notification', 'use_public_cc', False,
         """Recipients can see email addresses of other CC'ed recipients.
 
-        If this option is disabled(the default),
-        recipients are put on BCC.
-
-        (values: 1, on, enabled, true or 0, off, disabled, false)""")
+        If this option is disabled (the default), recipients are put on BCC.
+        """)
 
     attach_diff = BoolOption(
         'wiki-notification', 'attach_diff', False,
         """Send `diff`'s as an attachment instead of inline in email body.""")
+
+    notify_author = BoolOption(
+        'wiki-notification', 'notify_author', False,
+        """Normally authors are not notified if they themselves make a change to a page they are watching.
+
+        Enable this setting to notify authors of their own changes.""")
 
     redirect_time = IntOption(
         'wiki-notification', 'redirect_time', 5,
@@ -69,3 +73,4 @@ class WikiNotificationSystem(Component):
         'wiki-notification', 'banned_addresses', [],
         doc="""A comma separated list of email addresses that should never be
         sent a notification email.""")
+
