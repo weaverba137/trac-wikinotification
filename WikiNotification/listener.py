@@ -88,7 +88,7 @@ class WikiNotificationChangeListener(Component):
     def wiki_page_comment_modified(self, page, old_comment):
         req = self._get_req()
         author = req and req.authname or 'trac'
-        self._send_notification('comment modified', page, None, None, None, author, old_comment=old_comment)
+        self._send_notification('comment modified', page, page.version, None, page.comment, author, old_comment=old_comment)
 
     # Internal Methods
 
@@ -204,6 +204,7 @@ class WikiNotificationNotificationFormatter(Component):
         format_data['author'] = event.author
         format_data['name'] = event.target.name
         format_data['comment'] = event.comment
+        format_data['old_comment'] = event.old_comment
         format_data['text'] = event.target.text
         format_data['link'] = self.env.abs_href.wiki(event.target.name)
         format_data['linkdiff'] = self.env.abs_href.wiki(event.target.name, action='diff',
