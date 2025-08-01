@@ -20,7 +20,7 @@ Changes:
 ${wikidiff}
 -------8<------8<------8<------8<------8<------8<------8<------8<--------
 # else:
-Changes in attached ${name}.diff file.
+Changes in attached ${name.replace('/', '_')}.diff file.
 # endif
 # elif action == 'deleted':
 Page "${name}" was deleted by ${author}.

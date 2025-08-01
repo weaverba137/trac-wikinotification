@@ -176,7 +176,7 @@ class WikiNotificationNotificationFormatter(Component):
         set_header(message, 'Subject', subject, charset)
         # Attach diff, if configured that way.
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
-        if attach_diff:
+        if event.category == 'changed' and attach_diff:
             wikidiff = self._obtain_diff(event)
             part = MIMEText(wikidiff.encode('utf-8'), 'x-diff', charset)
             part['Content-Disposition'] = f'attachment; filename={event.target.name}.diff'
