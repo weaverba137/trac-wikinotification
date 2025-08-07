@@ -123,35 +123,76 @@ class WikiNotificationChangeListener(Component):
             raise WikiNotificationError(e)
 
     def _subscriptions(self, event):
-        QUERY_SIDS = """SELECT sid from session_attribute
-                        WHERE name=%s AND value LIKE %s"""
+        """Returns a list of tuples of ('sid', 'authenticated', 'email') + ('email', 'text/plain').
+        """
         transport_and_format = ('email', 'text/plain')
         matcher = RecipientMatcher(self.env)
-        page = event.target
+        perm = PermissionSystem(self.env)
+        resource = Resource('wiki', event.target.name)
         notify_author = self.config.getbool('wiki-notification', 'notify_author')
         blacklist = self.config.getlist('wiki-notification', 'banned_addresses')
+        smtp_always_cc = self.config.getlist('wiki-notification', 'smtp_always_cc')
+        smtp_always_bcc = self.config.getlist('wiki-notification', 'smtp_always_bcc')
+        subscribed_sids = self._db_subscriptions(event)
+        recipients = list()
+        for sid in subscribed_sids:
+            if sid == event.author and not notify_author:
+                self.log.info('Skipping notification of sid="%s"; notify_author=False.', sid)
+                continue
+            if not perm.check_permission(action='WIKI_VIEW', username=sid, resource=resource):
+                self.log.info('Skipping notification of sid="%s"; permission denied.', sid)
+                continue
+            recipient = matcher.match_recipient(sid)
+            if recipient is None:
+                self.log.warning("Invalid sid in watched_pages: '%s'!", sid)
+            else:
+                self.log.info('recipient = %s', recipient)
+                if recipient[2] in blacklist:
+                    self.log.info('Skipping notification of sid="%s"; email "%s" is blacklisted.', sid, recipient[2])
+                else:
+                    recipients.append(recipient + transport_and_format)
+        for email in smtp_always_cc + smtp_always_bcc:
+            recipient = matcher.match_recipient(email)
+            if recipient is None:
+                self.log.warning("Invalid email in smtp_always_(b)cc: '%s'!", email)
+            else:
+                self.log.info('recipient = %s', recipient)
+                if recipient[2] in blacklist:
+                    self.log.info('Skipping notification; email "%s" is blacklisted.', recipient[2])
+                else:
+                    recipients.append(recipient + transport_and_format)
+        deduplicate_email = dict()
+        for r in recipients:
+            if r[2] in deduplicate_email:
+                dup_r = deduplicate_email[r[2]]
+                self.log.info('Duplicate recipient detected: %s', r)
+                if r == deduplicate_email[r[2]]:
+                    self.log.info('Duplicate is identical to %s.', dup_r)
+                else:
+                    if r[0] and not dup_r[0]:
+                        self.log.info('Duplicate email has additional user information.')
+                        deduplicate_email[r[2]] = r
+                    elif r[1] > dup_r[1]:
+                        self.log.info('New recipient data is authenticated.')
+                        deduplicate_email[r[2]] = r
+                    else:
+                        self.log.info('No reason to prefer duplicate recipient, skipping.')
+            else:
+                deduplicate_email[r[2]] = r
+        return list(deduplicate_email.values())
+
+    def _db_subscriptions(self, event):
+        """Return a list of SIDs that are subscribed to a page.
+        """
+        QUERY_SIDS = """SELECT sid from session_attribute
+                        WHERE name=%s AND value LIKE %s"""
         with self.env.db_query as db:
             cursor = db.cursor()
-            cursor.execute(QUERY_SIDS, ('watched_pages', '%,' + page.name + ',%'))
+            cursor.execute(QUERY_SIDS, ('watched_pages', '%,' + event.target.name + ',%'))
             sids = cursor.fetchall()
             self.log.debug("SIDs to notify: %s", sids)
-            perm = PermissionSystem(self.env)
-            resource = Resource('wiki', page.name)
-            for sid in sids:
-                if sid[0] == event.author and not notify_author:
-                    self.log.debug('Skipping notification of sid="%s"; notify_author=False.', sid[0])
-                    continue
-                if not perm.check_permission(action='WIKI_VIEW', username=sid[0], resource=resource):
-                    self.log.debug('Skipping notification of sid="%s"; permission denied.', sid[0])
-                    continue
-                self.log.debug('Notifying sid="%s".', sid[0])
-                recipient = matcher.match_recipient(sid[0])
-                if recipient:
-                    self.log.debug('recipient = %s', recipient)
-                    if recipient[2] in blacklist:
-                        self.log.debug('Skipping notification of sid="%s"; email "%s" is blacklisted.', sid[0], recipient[2])
-                        continue
-                    yield recipient + transport_and_format
+            return_sids = [sid[0] for sid in sids]
+        return return_sids
 
     def _watch_renamed_page(self, pagename, old_pagename):
         with self.env.db_transaction as db:
@@ -174,6 +215,8 @@ class WikiNotificationNotificationFormatter(Component):
         # Set the subject
         subject = self._format_subject(event)
         set_header(message, 'Subject', subject, charset)
+        # Set CC, etc.
+        public_cc = self.config.getbool('wiki-notification', 'public_cc')
         # Attach diff, if configured that way.
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
         if event.category == 'changed' and attach_diff:

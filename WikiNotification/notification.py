@@ -45,7 +45,7 @@ class WikiNotificationSystem(Component):
 
     use_public_cc = BoolOption(
         'wiki-notification', 'use_public_cc', False,
-        """Recipients can see email addresses of other CC'ed recipients.
+        """Recipients can see email addresses of other CCed recipients.
 
         If this option is disabled (the default), recipients are put on BCC.
         """)

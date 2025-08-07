@@ -6,12 +6,12 @@ import re
 from setuptools import setup, find_packages
 
 PACKAGE = 'TracWikiNotification'
-VERSION = '0.4.4'
+VERSION = '1.0.0'
 AUTHOR = 'Pedro Algarvio'
 AUTHOR_EMAIL = 'ufs@ufsoft.org'
 SUMMARY = "Trac Plugin to allow email notification of changes on wiki pages"
 HOME_PAGE = 'https://trac-hacks.org/wiki/WikiNotificationPlugin'
-LICENSE = 'BSD'
+LICENSE = 'BSD-3-Clause'
 
 setup(
     name=PACKAGE,
@@ -35,13 +35,12 @@ setup(
     },
     keywords="trac plugin wiki notification",
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Framework :: Trac',
         'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'Topic :: Text Processing',
         'Topic :: Utilities',
         'Topic :: Internet :: WWW/HTTP',
