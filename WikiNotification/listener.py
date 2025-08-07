@@ -217,6 +217,8 @@ class WikiNotificationNotificationFormatter(Component):
         set_header(message, 'Subject', subject, charset)
         # Set CC, etc.
         public_cc = self.config.getbool('wiki-notification', 'public_cc')
+        smtp_always_cc = self.config.getlist('wiki-notification', 'smtp_always_cc')
+        set_header(message, 'Cc', ', '.join(smtp_always_cc), charset)
         # Attach diff, if configured that way.
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
         if event.category == 'changed' and attach_diff:
