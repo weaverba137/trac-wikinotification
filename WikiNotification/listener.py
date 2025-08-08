@@ -211,7 +211,7 @@ class WikiNotificationChangeListener(Component):
     SET value = value || %s
     WHERE name = %s
     AND value LIKE %s
-    AND value NOT %s;"""
+    AND value NOT LIKE %s;"""
             self.log.info(q, f"'{pagename},'", "'watched_pages'",
                           f"'%,{old_pagename},%'", f"'%,{pagename},%'")
             cursor = db.cursor()
