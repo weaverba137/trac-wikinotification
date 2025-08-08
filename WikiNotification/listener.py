@@ -50,6 +50,9 @@ class WikiNotificationChangeEvent(NotificationEvent):
         self.old_name = old_name
         self.old_comment = old_comment
         self.redirect = redirect
+        self.all_emails = list()
+        self.cc_emails = list()
+        self.bcc_emails = list()
 
 
 class WikiNotificationChangeListener(Component):
@@ -146,7 +149,7 @@ class WikiNotificationChangeListener(Component):
             if recipient is None:
                 self.log.warning("Invalid sid in watched_pages: '%s'!", sid)
             else:
-                self.log.info('recipient = %s', recipient)
+                self.log.debug('recipient = %s', recipient)
                 if recipient[2] in blacklist:
                     self.log.info('Skipping notification of sid="%s"; email "%s" is blacklisted.', sid, recipient[2])
                 else:
@@ -156,7 +159,7 @@ class WikiNotificationChangeListener(Component):
             if recipient is None:
                 self.log.warning("Invalid email in smtp_always_(b)cc: '%s'!", email)
             else:
-                self.log.info('recipient = %s', recipient)
+                self.log.debug('recipient = %s', recipient)
                 if recipient[2] in blacklist:
                     self.log.info('Skipping notification; email "%s" is blacklisted.', recipient[2])
                 else:
@@ -179,7 +182,11 @@ class WikiNotificationChangeListener(Component):
                         self.log.info('No reason to prefer duplicate recipient, skipping.')
             else:
                 deduplicate_email[r[2]] = r
-        return list(deduplicate_email.values())
+        # Attach CC data to the event.
+        event.all_emails = list(deduplicate_email.values())
+        event.cc_emails = [e for e in event.all_emails if e in smtp_always_cc]
+        event.bcc_emails = [e for e in event.all_emails if e in smtp_always_bcc]
+        return event.all_emails
 
     def _db_subscriptions(self, event):
         """Return a list of SIDs that are subscribed to a page.
@@ -217,14 +224,21 @@ class WikiNotificationNotificationFormatter(Component):
         set_header(message, 'Subject', subject, charset)
         # Set CC, etc.
         public_cc = self.config.getbool('wiki-notification', 'public_cc')
-        smtp_always_cc = self.config.getlist('wiki-notification', 'smtp_always_cc')
-        set_header(message, 'Cc', ', '.join(smtp_always_cc), charset)
+        if public_cc:
+            public_cc_emails = [e for e in event.all_emails if e not in event.bcc_emails]
+            if len(public_cc_emails) > 0:
+                set_header(message, 'To', public_cc_emails[0], charset)
+                if len(public_cc_emails) > 1:
+                    set_header(message, 'Cc', ', '.join(public_cc_emails[1:]), charset)
+        else:
+            set_header(message, 'Cc', ', '.join(event.cc_emails), charset)
         # Attach diff, if configured that way.
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
         if event.category == 'changed' and attach_diff:
             wikidiff = self._obtain_diff(event)
+            diffname = event.target.name.replace('/', '_')
             part = MIMEText(wikidiff.encode('utf-8'), 'x-diff', charset)
-            part['Content-Disposition'] = f'attachment; filename={event.target.name}.diff'
+            part['Content-Disposition'] = f'attachment; filename={diffname}.diff'
             message.attach(part)
 
     # INotificationFormatter methods

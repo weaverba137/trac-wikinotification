@@ -133,7 +133,4 @@ break any of the logic in that template.
 Upgrade Notes
 -------------
 
-* Still need to implement the various CC options.
-* ``(None)`` showing up when comments are modified.
 * More testing needed of various change + config combinations.
-* Can anonymous users really get notifications?
