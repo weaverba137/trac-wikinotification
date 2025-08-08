@@ -130,7 +130,8 @@ break any of the logic in that template.
 
 .. _`Jinja2 Text Templates`: https://trac.edgewall.org/wiki/TracDev/HtmlTemplates#Jinja2architecture
 
-Upgrade Notes
--------------
+Known Issues
+------------
 
-* More testing needed of various change + config combinations.
+* When a page is renamed, the SQL command that is supposed to add the renamed page
+  to the watch list is silently failing.
