@@ -221,9 +221,9 @@ class WikiNotificationChangeListener(Component):
             self.log.info(q, f'{pagename},', 'watched_pages',
                           db.like_escape(f'%,{old_pagename},%'),
                           db.like_escape(f'%,{pagename},%'))
-            cursor.execute(q2, (f'{pagename},', 'watched_pages',
-                                db.like_escape(f'%,{old_pagename},%'),
-                                db.like_escape(f'%,{pagename},%')))
+            # cursor.execute(q2, (f'{pagename},', 'watched_pages',
+            #                     db.like_escape(f'%,{old_pagename},%'),
+            #                     db.like_escape(f'%,{pagename},%')))
 
 
 class WikiNotificationNotificationFormatter(Component):
