@@ -170,18 +170,18 @@ class WikiNotificationChangeListener(Component):
         for r in recipients:
             if r[2] in deduplicate_email:
                 dup_r = deduplicate_email[r[2]]
-                self.log.info('Duplicate recipient detected: %s', r)
+                self.log.debug('Duplicate recipient detected: %s', r)
                 if r == deduplicate_email[r[2]]:
-                    self.log.info('Duplicate is identical to %s.', dup_r)
+                    self.log.debug('Duplicate is identical to %s.', dup_r)
                 else:
                     if r[0] and not dup_r[0]:
-                        self.log.info('Duplicate email has additional user information.')
+                        self.log.debug('Duplicate email has additional user information.')
                         deduplicate_email[r[2]] = r
                     elif r[1] > dup_r[1]:
-                        self.log.info('New recipient data is authenticated.')
+                        self.log.debug('New recipient data is authenticated.')
                         deduplicate_email[r[2]] = r
                     else:
-                        self.log.info('No reason to prefer duplicate recipient, skipping.')
+                        self.log.debug('No reason to prefer duplicate recipient, skipping.')
             else:
                 deduplicate_email[r[2]] = r
         # Attach CC data to the event.
@@ -207,6 +207,8 @@ class WikiNotificationChangeListener(Component):
     def _watch_renamed_page(self, pagename, old_pagename):
         with self.env.db_transaction as db:
             cursor = db.cursor()
+            self.log.info("UPDATE session_attribute SET value=value || %s WHERE name=%s AND value LIKE %s AND value NOT LIKE %s",
+                          '%s,' % pagename, 'watched_pages', '%,' + old_pagename + ',%', '%,' + pagename + ',%')
             cursor.execute("UPDATE session_attribute SET value=value || %s WHERE name=%s AND value LIKE %s AND value NOT LIKE %s",
                            ('%s,' % pagename, 'watched_pages', '%,' + old_pagename + ',%', '%,' + pagename + ',%'))
 
@@ -228,19 +230,19 @@ class WikiNotificationNotificationFormatter(Component):
         # Set CC, etc.
         public_cc = self.config.getbool('wiki-notification', 'use_public_cc')
         if public_cc:
-            self.log.info('public_cc is True')
-            self.log.info('event.all_emails = %s', event.all_emails)
-            self.log.info('event.bcc_emails = %s', event.bcc_emails)
+            self.log.debug('public_cc is True')
+            self.log.debug('event.all_emails = %s', event.all_emails)
+            self.log.debug('event.bcc_emails = %s', event.bcc_emails)
             public_cc_emails = [e for e in event.all_emails if e not in event.bcc_emails]
-            self.log.info('public_cc_emails = %s', public_cc_emails)
+            self.log.debug('public_cc_emails = %s', public_cc_emails)
             if len(public_cc_emails) > 0:
                 set_header(message, 'To', public_cc_emails[0], charset)
                 if len(public_cc_emails) > 1:
                     set_header(message, 'Cc', ', '.join(public_cc_emails[1:]), charset)
         else:
-            self.log.info('public_cc is False')
+            self.log.debug('public_cc is False')
             if event.cc_emails:
-                self.log.info('event.cc_emails = %s', event.cc_emails)
+                self.log.debug('event.cc_emails = %s', event.cc_emails)
                 set_header(message, 'Cc', ', '.join(event.cc_emails), charset)
         # Attach diff, if configured that way.
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')

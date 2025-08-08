@@ -25,7 +25,7 @@ Changes in attached ${name.replace('/', '_')}.diff file.
 # elif action == 'deleted':
 Page "${name}" was deleted by ${author}.
 # elif action == 'version deleted':
-Version "${version}" of page "${name}" was deleted by ${author}.
+Version ${version} of page "${name}" was deleted by ${author}.
 # elif action == 'renamed':
 Page "${old_name}" was renamed to "${name}" by ${author}.
 # if redirect:
