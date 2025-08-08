@@ -1,7 +1,7 @@
 # if action == 'added':
 Page "${name}" was added by ${author}.
 # if comment:
-Comment: ${comment}
+Comment: "${comment}"
 # endif
 Content:
 -------8<------8<------8<------8<------8<------8<------8<------8<--------
@@ -12,7 +12,7 @@ Page "${name}" was changed by ${author}.
 Diff URL: <${linkdiff}>
 Revision: ${version}
 # if comment:
-Comment: ${comment}
+Comment: "${comment}"
 # endif
 # if wikidiff:
 Changes:
@@ -33,6 +33,7 @@ Redirect to the renamed page was left behind.
 # endif
 # elif action == 'comment modified':
 Comment on page "${name}" was modified by ${author}.
+Revision: ${version}
 Old comment: "${old_comment if old_comment else ''}"
 New comment: "${comment if comment else ''}"
 # endif

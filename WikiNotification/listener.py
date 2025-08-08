@@ -275,6 +275,7 @@ class WikiNotificationNotificationFormatter(Component):
         format_data['comment'] = event.comment
         format_data['old_name'] = event.old_name
         format_data['old_comment'] = event.old_comment
+        format_data['redirect'] = event.redirect
         format_data['text'] = event.target.text
         format_data['link'] = self.env.abs_href.wiki(event.target.name)
         format_data['linkdiff'] = self.env.abs_href.wiki(event.target.name, action='diff',
