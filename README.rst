@@ -134,4 +134,5 @@ Known Issues
 ------------
 
 * When a page is renamed, the SQL command that is supposed to add the renamed page
-  to the watch list is silently failing.
+  to the watch list is silently failing. Perhaps the update is being run within
+  an outer transaction block that is tied to the session.
