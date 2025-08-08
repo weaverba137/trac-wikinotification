@@ -87,6 +87,7 @@ class WikiNotificationChangeListener(Component):
         req = self._get_req()
         author = req and req.authname or 'trac'
         redirect = req and req.args.get('redirect') or None
+        self.log.info('self._watch_renamed_page("%s", "%s")', page.name, old_name)
         self._watch_renamed_page(page.name, old_name)
         self._send_notification('renamed', page, None, None, None, author, old_name=old_name, redirect=redirect)
 
@@ -205,12 +206,12 @@ class WikiNotificationChangeListener(Component):
         return return_sids
 
     def _watch_renamed_page(self, pagename, old_pagename):
+        self.log.info("UPDATE session_attribute SET value=value || %s WHERE name=%s AND value LIKE %s AND value NOT LIKE %s",
+                      f'{pagename},', 'watched_pages', f'%,{old_pagename},%', f'%,{pagename},%')
         with self.env.db_transaction as db:
             cursor = db.cursor()
-            self.log.info("UPDATE session_attribute SET value=value || %s WHERE name=%s AND value LIKE %s AND value NOT LIKE %s",
-                          '%s,' % pagename, 'watched_pages', '%,' + old_pagename + ',%', '%,' + pagename + ',%')
             cursor.execute("UPDATE session_attribute SET value=value || %s WHERE name=%s AND value LIKE %s AND value NOT LIKE %s",
-                           ('%s,' % pagename, 'watched_pages', '%,' + old_pagename + ',%', '%,' + pagename + ',%'))
+                           (f'{pagename},', 'watched_pages', f'%,{old_pagename},%', f'%,{pagename},%'))
 
 
 class WikiNotificationNotificationFormatter(Component):
