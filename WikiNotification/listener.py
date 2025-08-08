@@ -214,10 +214,10 @@ class WikiNotificationChangeListener(Component):
     AND value {like} '%s'
     AND value NOT {like} '%s';""".format(like=db.like())
             q2 = """UPDATE session_attribute
-    SET value = value || ?
-    WHERE name = ?
-    AND value {like} ?
-    AND value NOT {like} ?;""".format(like=db.like())
+    SET value = value || %s
+    WHERE name = %s
+    AND value {like} %s
+    AND value NOT {like} %s;""".format(like=db.like())
             self.log.info(q, f'{pagename},', 'watched_pages',
                           db.like_escape(f'%,{old_pagename},%'),
                           db.like_escape(f'%,{pagename},%'))
