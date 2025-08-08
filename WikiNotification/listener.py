@@ -64,7 +64,8 @@ class WikiNotificationChangeListener(Component):
     # IWikiChangeListener methods
 
     def wiki_page_added(self, page):
-        version, time, author, comment = page.get_history().next()
+        # version, time, author, comment = page.get_history().next()
+        version, time, author, comment = next(page.get_history())
         self._send_notification('added', page, version, time, comment, author)
 
     def wiki_page_changed(self, page, version, time, comment, author):
@@ -78,7 +79,8 @@ class WikiNotificationChangeListener(Component):
     def wiki_page_version_deleted(self, page):
         req = self._get_req()
         author = req and req.authname or 'trac'
-        version, _time, _author, _comment = page.get_history().next()
+        # version, _time, _author, _comment = page.get_history().next()
+        version, _time, _author, _comment = next(page.get_history())
         self._send_notification('version deleted', page, version+1, None, None, author)
 
     def wiki_page_renamed(self, page, old_name):
@@ -225,13 +227,18 @@ class WikiNotificationNotificationFormatter(Component):
         # Set CC, etc.
         public_cc = self.config.getbool('wiki-notification', 'public_cc')
         if public_cc:
+            self.log.info('public_cc is True')
             public_cc_emails = [e for e in event.all_emails if e not in event.bcc_emails]
+            self.log.info('public_cc_emails = %s', public_cc_emails)
             if len(public_cc_emails) > 0:
                 set_header(message, 'To', public_cc_emails[0], charset)
                 if len(public_cc_emails) > 1:
                     set_header(message, 'Cc', ', '.join(public_cc_emails[1:]), charset)
         else:
-            set_header(message, 'Cc', ', '.join(event.cc_emails), charset)
+            self.log.info('public_cc is False')
+            if event.cc_emails:
+                self.log.info('event.cc_emails = %s', event.cc_emails)
+                set_header(message, 'Cc', ', '.join(event.cc_emails), charset)
         # Attach diff, if configured that way.
         attach_diff = self.config.getbool('wiki-notification', 'attach_diff')
         if event.category == 'changed' and attach_diff:
@@ -263,6 +270,7 @@ class WikiNotificationNotificationFormatter(Component):
         format_data['author'] = event.author
         format_data['name'] = event.target.name
         format_data['comment'] = event.comment
+        format_data['old_name'] = event.old_name
         format_data['old_comment'] = event.old_comment
         format_data['text'] = event.target.text
         format_data['link'] = self.env.abs_href.wiki(event.target.name)
