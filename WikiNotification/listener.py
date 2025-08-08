@@ -210,15 +210,13 @@ class WikiNotificationChangeListener(Component):
             q = """UPDATE session_attribute
     SET value = value || %s
     WHERE name = %s
-    AND value {like}
-    AND value NOT {like};""".format(like=db.like())
-            self.log.info(q, f'{pagename},', 'watched_pages',
-                          db.like_escape(f'%,{old_pagename},%'),
-                          db.like_escape(f'%,{pagename},%'))
+    AND value LIKE %s
+    AND value NOT %s;""".format(like=db.like())
+            self.log.info(q, f"'{pagename},'", "'watched_pages'",
+                          f"'%,{old_pagename},%'", f"'%,{pagename},%'")
             cursor = db.cursor()
             cursor.execute(q, (f'{pagename},', 'watched_pages',
-                               db.like_escape(f'%,{old_pagename},%'),
-                               db.like_escape(f'%,{pagename},%')))
+                               f'%,{old_pagename},%', f'%,{pagename},%'))
 
 
 class WikiNotificationNotificationFormatter(Component):
