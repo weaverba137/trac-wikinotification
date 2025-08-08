@@ -185,10 +185,11 @@ class WikiNotificationChangeListener(Component):
             else:
                 deduplicate_email[r[2]] = r
         # Attach CC data to the event.
-        event.all_emails = list(deduplicate_email.values())
+        return_recipients = list(deduplicate_email.values())
+        event.all_emails = [r[2] for r in return_recipients]
         event.cc_emails = [e for e in event.all_emails if e in smtp_always_cc]
         event.bcc_emails = [e for e in event.all_emails if e in smtp_always_bcc]
-        return event.all_emails
+        return return_recipients
 
     def _db_subscriptions(self, event):
         """Return a list of SIDs that are subscribed to a page.
