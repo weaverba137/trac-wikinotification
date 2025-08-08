@@ -225,9 +225,11 @@ class WikiNotificationNotificationFormatter(Component):
         subject = self._format_subject(event)
         set_header(message, 'Subject', subject, charset)
         # Set CC, etc.
-        public_cc = self.config.getbool('wiki-notification', 'public_cc')
+        public_cc = self.config.getbool('wiki-notification', 'use_public_cc')
         if public_cc:
             self.log.info('public_cc is True')
+            self.log.info('event.all_emails = %s', event.all_emails)
+            self.log.info('event.bcc_emails = %s', event.bcc_emails)
             public_cc_emails = [e for e in event.all_emails if e not in event.bcc_emails]
             self.log.info('public_cc_emails = %s', public_cc_emails)
             if len(public_cc_emails) > 0:
