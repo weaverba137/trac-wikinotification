@@ -129,13 +129,3 @@ Make sure you read the `Jinja2 Text Templates`_ documentation to see if you don'
 break any of the logic in that template.
 
 .. _`Jinja2 Text Templates`: https://trac.edgewall.org/wiki/TracDev/HtmlTemplates#Jinja2architecture
-
-Known Issues
-------------
-
-* When a watched page is renamed, a SQL command is supposed to add the renamed page
-  to the watch list for any user who is watching the page. This ``UPDATE``
-  is silently failing. Perhaps the update is being run within
-  an outer transaction block that is tied to the session. However, tests on older
-  versions of the plugin show similar issues, so it is possible that this
-  functionality *never* worked.
