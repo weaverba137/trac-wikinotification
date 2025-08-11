@@ -88,7 +88,7 @@ class WikiNotificationChangeListener(Component):
         author = req and req.authname or 'trac'
         redirect = req and req.args.get('redirect') or None
         self.log.info('self._watch_renamed_page("%s", "%s")', page.name, old_name)
-        self._watch_renamed_page(page.name, old_name)
+        self._watch_renamed_page(req, page.name, old_name)
         self._send_notification('renamed', page, None, None, None, author, old_name=old_name, redirect=redirect)
 
     def wiki_page_comment_modified(self, page, old_comment):
@@ -205,18 +205,35 @@ class WikiNotificationChangeListener(Component):
             return_sids = [sid[0] for sid in sids]
         return return_sids
 
-    def _watch_renamed_page(self, pagename, old_pagename):
+    def _watch_renamed_page(self, req, pagename, old_pagename):
+        """Add the new name of a previously-watched page to the list of watched pages.
+
+        Note that there is a corner case: if the author of a rename is also watching
+        the old page, the new page can be overwritten when the session
+        attributes are periodically saved.
+        """
         with self.env.db_transaction as db:
             q = """UPDATE session_attribute
     SET value = value || %s
-    WHERE name = %s
+    WHERE sid != %s
+    AND name = %s
     AND value LIKE %s
     AND value NOT LIKE %s;"""
-            self.log.info(q, f"'{pagename},'", "'watched_pages'",
+            self.log.info(q, f"'{pagename},'", f"'{req.authname}'", "'watched_pages'",
                           f"'%,{old_pagename},%'", f"'%,{pagename},%'")
             cursor = db.cursor()
-            cursor.execute(q, (f'{pagename},', 'watched_pages',
+            cursor.execute(q, (f'{pagename},', req.authname, 'watched_pages',
                                f'%,{old_pagename},%', f'%,{pagename},%'))
+        # Now check the author of the change.
+        try:
+            watched = req.session['watched_pages'].strip(',').split(',')
+        except KeyError:
+            # The author was clearly not watching the page, skip further processing.
+            return
+        if old_pagename in watched:
+            watched.append(pagename)
+            req.session['watched_pages'] = ',' + ','.join(watched) + ','
+            req.session.save()
 
 
 class WikiNotificationNotificationFormatter(Component):

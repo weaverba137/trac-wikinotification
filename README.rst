@@ -133,6 +133,9 @@ break any of the logic in that template.
 Known Issues
 ------------
 
-* When a page is renamed, the SQL command that is supposed to add the renamed page
-  to the watch list is silently failing. Perhaps the update is being run within
-  an outer transaction block that is tied to the session.
+* When a watched page is renamed, a SQL command is supposed to add the renamed page
+  to the watch list for any user who is watching the page. This ``UPDATE``
+  is silently failing. Perhaps the update is being run within
+  an outer transaction block that is tied to the session. However, tests on older
+  versions of the plugin show similar issues, so it is possible that this
+  functionality *never* worked.
